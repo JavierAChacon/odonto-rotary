@@ -8,6 +8,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-odonto}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odonto}
       POSTGRES_DB: ${POSTGRES_DB:-odonto}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - database-data:/var/lib/postgresql
     healthcheck:
@@ -23,11 +25,17 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3000
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3001}
+      DOCS_BASIC_AUTH_USER: ${DOCS_BASIC_AUTH_USER:-admin}
+      DOCS_BASIC_AUTH_PASSWORD: ${DOCS_BASIC_AUTH_PASSWORD:?DOCS_BASIC_AUTH_PASSWORD is required}
       DATABASE_URL: postgresql://${POSTGRES_USER:-odonto}:${POSTGRES_PASSWORD:-odonto}@database:5432/${POSTGRES_DB:-odonto}
     ports:
       - "${SERVER_PORT:-3000}:3000"
     volumes:
       - ./server/src:/app/src
+      - ./server/prisma:/app/prisma
     depends_on:
       database:
         condition: service_healthy
