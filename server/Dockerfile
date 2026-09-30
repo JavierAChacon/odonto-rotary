@@ -6,6 +6,8 @@ FROM base AS development
 ENV NODE_ENV=development
 RUN npm ci
 COPY . .
+ENV DATABASE_URL=postgresql://unused:unused@localhost:5432/unused
+RUN npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
