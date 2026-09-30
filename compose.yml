@@ -1,0 +1,53 @@
+name: odonto-rotary
+
+services:
+  database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-odonto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odonto}
+      POSTGRES_DB: ${POSTGRES_DB:-odonto}
+    volumes:
+      - database-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+      target: ${APP_ENV:-development}
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-odonto}:${POSTGRES_PASSWORD:-odonto}@database:5432/${POSTGRES_DB:-odonto}
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
+    volumes:
+      - ./server/src:/app/src
+    depends_on:
+      database:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      target: ${APP_ENV:-development}
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+    ports:
+      - "${CLIENT_PORT:-3001}:3000"
+    volumes:
+      - ./client/app:/app/app
+      - ./client/public:/app/public
+    depends_on:
+      - server
+
+volumes:
+  database-data:
