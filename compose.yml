@@ -45,15 +45,16 @@ services:
       context: ./client
       target: ${APP_ENV:-development}
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     ports:
       - "${CLIENT_PORT:-3001}:3000"
     volumes:
-      - ./client/app:/app/app
+      - ./client/src:/app/src
       - ./client/public:/app/public
+      - ./client/index.html:/app/index.html
     depends_on:
       - server
 
