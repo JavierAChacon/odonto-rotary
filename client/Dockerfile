@@ -4,34 +4,20 @@ COPY package.json package-lock.json ./
 
 FROM base AS development
 ENV NODE_ENV=development
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm ci
 COPY . .
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
 
 FROM development AS build
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 ENV NODE_ENV=production
 RUN npm run build
 
-FROM base AS production-dependencies
-RUN npm ci --omit=dev
-
-FROM node:24-alpine AS staging
-WORKDIR /app
-ENV NODE_ENV=production
-ENV APP_ENV=staging
-ENV NEXT_TELEMETRY_DISABLED=1
-COPY --from=production-dependencies /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/next.config.ts ./next.config.ts
-COPY package.json ./
-USER node
+FROM nginx:alpine AS staging
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 3000
-CMD ["npm", "run", "start"]
 
 FROM staging AS production
-ENV APP_ENV=production
