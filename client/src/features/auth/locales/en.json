@@ -1,0 +1,29 @@
+{
+  "login": {
+    "description": "Sign in to continue",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  },
+  "changePassword": {
+    "description": "You must change your password before continuing",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Change password"
+  },
+  "home": {
+    "greeting": "Hello, {{name}}"
+  },
+  "validation": {
+    "emailInvalid": "Enter a valid email",
+    "passwordRequired": "Enter your password",
+    "currentPasswordRequired": "Enter your current password",
+    "newPasswordTooShort": "The new password must have at least 8 characters",
+    "confirmPasswordMismatch": "The confirmation does not match the new password",
+    "newPasswordSameAsCurrent": "The new password must be different from the current one"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  }
+}

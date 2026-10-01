@@ -20,8 +20,13 @@ Este archivo es la única fuente de verdad del contexto y de la arquitectura del
 
 * El cliente dejó Next.js por React + Vite (SPA): sin SSR, sin `proxy.ts` y sin `next-intl`.
 * **TanStack Query** gestiona todo el estado de servidor.
-* Idiomas previstos: español e inglés. La librería de i18n está pendiente de decidir.
-* Hoy el cliente es solo el scaffold con una página mínima: aún no hay router, estado ni pantallas.
+* Idiomas: español e inglés con **react-i18next** (react-i18next 17, i18next 26, i18next-browser-languagedetector 8.2). Un namespace por feature, con los textos en `features/<feature>/locales/{es,en}.json`. Detección por cookie `locale` y luego el navegador, inglés por defecto, y la elección se escribe en la cookie `locale`, que es la misma que lee el backend.
+* Formularios con **React Hook Form + zod** (react-hook-form 7.89, @hookform/resolvers 5.9, zod 4.6: instala `zod@^4`, un `npm install zod` resolvió 3.25 por un peer).
+* Enrutado con **TanStack Router** (1.170) y estado de servidor con **TanStack Query** (5.104).
+* `better-auth` en el cliente se fija a la misma versión exacta que el servidor (hoy 1.7.6), aunque exista una más nueva.
+* Sin `axios` por ahora: todo el acceso a la API es por rutas nativas de Better Auth. Se agrega cuando haya endpoints propios.
+* Pruebas automatizadas del cliente (Vitest y Testing Library) quedan para después por decisión del usuario. No las instales hasta que se pida.
+* Hoy el cliente tiene las pantallas de inicio de sesión y de cambio obligatorio de contraseña, más un inicio mínimo con saludo y cierre de sesión (feature `auth`).
 * Staging y producción del despliegue están diferidos: no asumas hosting ni dominio.
 
 ## Arquitectura: feature driven
@@ -82,7 +87,10 @@ Cada feature incluye solo las carpetas que necesita. Features previstas: `auth` 
 ### Rutas (TanStack Router)
 
 * Enrutado por archivos con el plugin de Vite de TanStack Router, que genera `routeTree.gen.ts` y admite `autoCodeSplitting`. Los nombres de archivo siguen sus convenciones: `__root.tsx`, `index.tsx`, `_layout.tsx` para layouts sin segmento de URL y `$param.tsx` para parámetros.
-* El directorio de rutas vive en `src/app/routes/`. Al instalar, confirma en la documentación el nombre exacto del plugin y de las opciones (`routesDirectory`, `generatedRouteTree`) antes de configurarlos.
+* El directorio de rutas vive en `src/app/routes/`. Plugin real: `import { tanstackRouter } from '@tanstack/router-plugin/vite'` con `target: 'react'`, `autoCodeSplitting: true`, `routesDirectory: './src/app/routes'` y `generatedRouteTree: './src/app/route-tree.gen.ts'`, colocado antes de `react()`.
+* El árbol generado `src/app/route-tree.gen.ts` se versiona (la documentación lo recomienda y `npm run build` ejecuta `tsc -b` antes de Vite, así que debe existir en un clon limpio) y está en `ignorePatterns` de `.oxlintrc.json`.
+* Los archivos de ruta solo exportan `Route` (si declaran un componente en el mismo archivo, `react/only-export-components` avisa): las pantallas viven como componentes de la feature (`login-screen.tsx`, `change-password-screen.tsx`, `home-screen.tsx`).
+* El contexto del router lleva `queryClient` (`lib/query-client.ts`); las guardas usan `context.queryClient.ensureQueryData(sessionQueryOptions)`. Tras iniciar sesión o cambiar contraseña, `refreshSession` hace `fetchQuery` con `staleTime: 0` (ensureQueryData devolvería la sesión nula cacheada); el cierre de sesión hace `queryClient.clear()`.
 * Los archivos de ruta son delgados: declaran la ruta, sus guardas (`beforeLoad` con redirecciones), el `head` y qué componentes de features componen la pantalla. Sin lógica de negocio.
 * El guard de sesión y de `mustChangePassword` vive en un layout de rutas protegidas en `app/routes`.
 
@@ -91,7 +99,8 @@ Cada feature incluye solo las carpetas que necesita. Features previstas: `auth` 
 * Formularios con React Hook Form y `zodResolver`, con el esquema en `schemas/` de la feature. Confirma versiones antes de instalar.
 * Los errores de la API se convierten en errores tipados en `lib/`. Los componentes muestran el mensaje con un helper común. Los códigos del backend (`MUST_CHANGE_PASSWORD`) se traducen a textos de interfaz.
 * Estilos con Tailwind. Las variantes se definen con `cva` y se combinan con `cn`. No repitas cadenas largas de utilidades inline: extrae un componente o una variante. Inline solo para marcado único.
-* Los componentes de shadcn viven en `components/ui`. Si un componente exporta sus variantes junto al componente, sepáralas en un archivo `*-variants.ts`, para que `react/only-export-components` no dé avisos.
+* Detector de idioma (`lib/i18n.ts`): `order: ['cookie', 'navigator']`, `lookupCookie: 'locale'`, `caches: ['cookie']`, `cookieOptions: { path: '/', sameSite: 'lax', maxAge: un año }` sin `cookieDomain` (la cookie de `localhost` no distingue puertos, por eso la ve el backend), `supportedLngs: ['es','en']`, `load: 'languageOnly'`, `initAsync: false`. Los recursos del namespace `common` se registran en `lib/i18n.ts`; los de cada feature se agregan en `app/provider.tsx` con `addResourceBundle` para no violar la regla shared a features. Los mensajes de los esquemas zod son claves i18n (por ejemplo `validation.emailInvalid`) que el componente traduce al mostrarlas.
+* Los componentes de shadcn viven en `components/ui`. `toggle` se separó en `toggle-variants.ts` (igual que `button`). Si un componente exporta sus variantes junto al componente, sepáralas en un archivo `*-variants.ts`, para que `react/only-export-components` no dé avisos.
 * Usa el skill `shadcn` y su CLI (`npx shadcn@latest add`, `docs`, `info`). Revisa cada componente añadido.
 
 ### Pruebas
@@ -134,3 +143,8 @@ Cada feature incluye solo las carpetas que necesita. Features previstas: `auth` 
 Antes de declarar algo terminado, ejecuta en `client/` y revisa la salida real de: `npm run lint`, `npx tsc -b` y `npm run build`, más las pruebas cuando existan. Para cambios visibles, levanta el cliente (`docker compose up -d --no-deps client` o `npm run dev`) y comprueba que responde en `http://localhost:3001`. Si algo falla y no lo resuelves tras un intento razonable, detente y repórtalo con la salida exacta.
 
 Tu reporte final es corto y fiel: qué hiciste, resultado de las verificaciones, desviaciones, pasos omitidos o fallidos y archivos creados o modificados. Nunca afirmes que algo funciona sin haberlo ejecutado y visto el resultado.
+
+## Entorno local de verificación
+
+* El backend no carga `server/.env` por sí solo: arráncalo con `cd server && (set -a; . ./.env; set +a; npm run start:dev)`. Cliente: `npm run dev -- --port 3001`. El admin de desarrollo se restablece con `DELETE FROM "user" WHERE email='admin@odonto.local'` en la base y `npx prisma db seed` con el entorno cargado (la columna es `must_change_password`).
+* No uses `pkill -f` con patrones amplios: puede terminar tu propio shell. Mata por PID.
