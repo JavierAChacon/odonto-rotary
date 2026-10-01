@@ -1,11 +1,24 @@
 import { readRequiredEnvironmentVariable } from '../src/app.helper.js';
-import { seedFirstAdmin } from '../src/auth/seed-first-admin.js';
+import { auth } from '../src/auth/auth.service.js';
 import { prisma } from '../src/prisma/prisma.service.js';
 
-const seededAdmin = await seedFirstAdmin({
-  email: readRequiredEnvironmentVariable('SEED_ADMIN_EMAIL'),
-  password: readRequiredEnvironmentVariable('SEED_ADMIN_PASSWORD'),
+const adminEmail = readRequiredEnvironmentVariable('SEED_ADMIN_EMAIL');
+const adminPassword = readRequiredEnvironmentVariable('SEED_ADMIN_PASSWORD');
+
+const existingAdmin = await prisma.user.findUnique({
+  where: { email: adminEmail.toLowerCase() },
 });
 
-console.log(`Admin ready: ${seededAdmin.email}`);
+if (!existingAdmin) {
+  await auth.api.createUser({
+    body: {
+      email: adminEmail,
+      password: adminPassword,
+      name: 'Administrator',
+      role: 'admin',
+    },
+  });
+}
+
+console.log(`Admin ready: ${adminEmail}`);
 await prisma.$disconnect();

@@ -1,14 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { seedFirstAdmin } from '../src/auth/seed-first-admin.js';
 import { prisma } from '../src/prisma/prisma.service.js';
+import {
+  adminCredentials,
+  createAdmin,
+} from './support/create-signed-in-admin.js';
 import { createTestApplication } from './support/create-test-application.js';
 import { resetDatabase } from './support/reset-database.js';
-
-const adminCredentials = {
-  email: 'admin@odonto.test',
-  password: 'initial-admin-password',
-};
+import { runAdminSeed } from './support/run-admin-seed.js';
 
 describe('Authentication (e2e)', () => {
   let application: INestApplication;
@@ -23,7 +22,7 @@ describe('Authentication (e2e)', () => {
   });
 
   it('creates the first admin flagged to change the password', async () => {
-    await seedFirstAdmin(adminCredentials);
+    runAdminSeed();
 
     const storedAdmin = await prisma.user.findUniqueOrThrow({
       where: { email: adminCredentials.email },
@@ -31,17 +30,17 @@ describe('Authentication (e2e)', () => {
 
     expect(storedAdmin.role).toBe('admin');
     expect(storedAdmin.mustChangePassword).toBe(true);
-  });
+  }, 60000);
 
   it('does not create a second admin when seeding twice', async () => {
-    await seedFirstAdmin(adminCredentials);
-    await seedFirstAdmin(adminCredentials);
+    runAdminSeed();
+    runAdminSeed();
 
     expect(await prisma.user.count()).toBe(1);
-  });
+  }, 60000);
 
   it('signs in with the correct password', async () => {
-    await seedFirstAdmin(adminCredentials);
+    await createAdmin();
 
     const signInResponse = await request(application.getHttpServer())
       .post('/api/auth/sign-in/email')
@@ -53,7 +52,7 @@ describe('Authentication (e2e)', () => {
   });
 
   it('rejects a wrong password with 401', async () => {
-    await seedFirstAdmin(adminCredentials);
+    await createAdmin();
 
     const signInResponse = await request(application.getHttpServer())
       .post('/api/auth/sign-in/email')

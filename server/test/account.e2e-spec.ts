@@ -1,8 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { seedFirstAdmin } from '../src/auth/seed-first-admin.js';
 import { prisma } from '../src/prisma/prisma.service.js';
-import { adminCredentials } from './support/create-signed-in-admin.js';
+import {
+  adminCredentials,
+  createAdmin,
+} from './support/create-signed-in-admin.js';
 import { createTestApplication } from './support/create-test-application.js';
 import { resetDatabase } from './support/reset-database.js';
 import { signInAs } from './support/sign-in.js';
@@ -14,7 +16,7 @@ describe('Account password change through native Better Auth routes (e2e)', () =
   beforeEach(async () => {
     await resetDatabase();
     application = await createTestApplication();
-    await seedFirstAdmin(adminCredentials);
+    await createAdmin();
     adminCookies = await signInAs(
       application,
       adminCredentials.email,
