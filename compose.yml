@@ -31,6 +31,8 @@ services:
       DOCS_BASIC_AUTH_USER: ${DOCS_BASIC_AUTH_USER:-admin}
       DOCS_BASIC_AUTH_PASSWORD: ${DOCS_BASIC_AUTH_PASSWORD:?DOCS_BASIC_AUTH_PASSWORD is required}
       DATABASE_URL: postgresql://${POSTGRES_USER:-odonto}:${POSTGRES_PASSWORD:-odonto}@database:5432/${POSTGRES_DB:-odonto}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
     ports:
       - "${SERVER_PORT:-3000}:3000"
     volumes:
