@@ -1,0 +1,29 @@
+{
+  "login": {
+    "description": "Inicia sesión para continuar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión"
+  },
+  "changePassword": {
+    "description": "Debes cambiar tu contraseña antes de continuar",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar nueva contraseña",
+    "submit": "Cambiar contraseña"
+  },
+  "home": {
+    "greeting": "Hola, {{name}}"
+  },
+  "validation": {
+    "emailInvalid": "Ingresa un correo válido",
+    "passwordRequired": "Ingresa tu contraseña",
+    "currentPasswordRequired": "Ingresa tu contraseña actual",
+    "newPasswordTooShort": "La nueva contraseña debe tener al menos 8 caracteres",
+    "confirmPasswordMismatch": "La confirmación no coincide con la nueva contraseña",
+    "newPasswordSameAsCurrent": "La nueva contraseña debe ser distinta de la actual"
+  },
+  "errors": {
+    "generic": "Algo salió mal. Inténtalo de nuevo."
+  }
+}
